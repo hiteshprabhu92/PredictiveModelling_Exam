@@ -229,30 +229,40 @@ indus, nox, dis, ptratio, medv
 ```{r Loading College}
 library(caTools)
 library(ISLR)
-set.seed(1000)
 split = sample.split(College$Apps, SplitRatio = 0.7)
 train = subset(College, split == TRUE)
 test = subset(College, split == FALSE)
-```
 
+```
 Train and test datasets were split into 70% and 30%
 
 ### 3.b
-```{r linearModel on CollegeApps}
-model_collegeApp <- lm(Apps~., data = train)
-summary(model_collegeApp)
+```{r linearModel on CollegeApps, echo=FALSE}
+RMSE_hist_b <- NULL
+# set.seed(1)
 
-# Making predictions and calculating
-predictions_collegeApp <- predict(model_collegeApp, newdata = test)
-SSE <- sum((predictions_collegeApp - test$Apps)^2)
-SST <- sum((mean(train$Apps) - test$Apps)^2)
-RMSE <- sqrt(SSE/nrow(test))
-cat("The test error obtained was: ", RMSE, "\n")
+for(i in 1:5)
+{
+  set.seed(i)
+  split = sample.split(College$Apps, SplitRatio = 0.7)
+  train = subset(College, split == TRUE)
+  test = subset(College, split == FALSE)
+  model_collegeApp <- lm(Apps~., data = train)
+  summary(model_collegeApp)
+  
+  # Making predictions and calculating
+  predictions_collegeApp <- predict(model_collegeApp, newdata = test)
+  SSE <- sum((predictions_collegeApp - test$Apps)^2)
+  SST <- sum((mean(train$Apps) - test$Apps)^2)
+  RMSE <- sqrt(SSE/nrow(test))
+  RMSE_hist_b <- c(RMSE_hist_b, RMSE)
+}
+cat("The mean test error obtained was: ", round(mean(RMSE_hist_b),2), "\n")
 ```
-The test error obtained was `RMSE`
+The test error obtained using ordinary least squares regression was `r round(mean(RMSE_hist_b),2)`
 
 ### 3.c
-```{r RidgeModel on College}
+```{r RidgeModel on College, echo=FALSE}
 library(glmnet)
 library(ISLR)
 
@@ -261,25 +271,32 @@ sapply(College, function(x) sum(is.na(x)))
 
 x <- model.matrix(Apps~., data = College)[,-1]
 y <- College$Apps
-train = sample(1:nrow(x), nrow(x)/2)
-test = (-train)
-set.seed(1000)
-y.test=y[test]
+RMSE_hist_c <- NULL
+# set.seed(1)
 
-grid = 10^seq(10,-2, length = 100)
-ridge.mod = glmnet(x, y, alpha = 0, lambda = grid)
-cv.out = cv.glmnet(x[train, ], y[train], alpha = 0)
-plot(cv.out)
-bestlam = cv.out$lambda.min
-bestlam
-ridge.pred = predict(ridge.mod, s = bestlam, newx = x[test,])
-RMSE <- sqrt(mean((ridge.pred-y.test)^2)) 
-cat("The test error with Ridge Regression was was:", RMSE, "with lambda =", bestlam,"\n")
+for(i in 1:5)
+{
+  set.seed(i)
+  train = sample(1:nrow(x), nrow(x)/2)
+  test = (-train)
+  y.test=y[test]
+  
+  grid = 10^seq(10,-2, length = 100)
+  ridge.mod = glmnet(x, y, alpha = 0, lambda = grid)
+  cv.out = cv.glmnet(x[train, ], y[train], alpha = 0)
+  plot(cv.out)
+  bestlam = cv.out$lambda.min
+  bestlam
+  ridge.pred = predict(ridge.mod, s = bestlam, newx = x[test,])
+  RMSE <- sqrt(mean((ridge.pred-y.test)^2))
+  RMSE_hist_c <- c(RMSE_hist_c, RMSE)
+}
+cat("The test error with Ridge Regression was was:", round(mean(RMSE_hist_c),2), "with lambda =", bestlam,"\n")
 ```
-The test error with Ridge Regression was was:`RMSE` with lambda = `bestlam`
+The test error with Ridge Regression was was:`r round(mean(RMSE_hist_c),2)` with lambda = `r bestlam`
 
 ### 3.d
-```{r LassoModel on College}
+```{r LassoModel on College, echo=FALSE}
 library(glmnet)
 library(ISLR)
 
@@ -288,33 +305,102 @@ sapply(College, function(x) sum(is.na(x)))
 
 x <- model.matrix(Apps~., data = College)[,-1]
 y <- College$Apps
-train = sample(1:nrow(x), nrow(x)/2)
-test = (-train)
-set.seed(1000)
-y.test=y[test]
+RMSE_hist_d <- NULL
+# set.seed(1)
 
-grid = 10^seq(8,-2, length = 100)
-lasso.mod <- glmnet(x[train, ], y[train], alpha = 1, lambda = grid)
-plot(lasso.mod) # Drawing plots of coefficients
-
-cv.out = cv.glmnet(x[train, ], y[train], alpha = 1) # Fit lasso model on training data
-plot(cv.out) # Draw plot of training MSE as a function of lambda
-bestlam = cv.out$lambda.min # Select lamda that minimizes training MSE
-lasso.pred = predict(lasso.mod, s = bestlam, newx = x[test,]) # Use best lambda to predict test data
-RMSE <- sqrt(mean((lasso.pred - y.test)^2)) 
-cat("The test error with Ridge Regression was was:", RMSE, "with lambda =", bestlam,"\n")
+for(i in 1:5)
+{
+  set.seed(i)
+  train = sample(1:nrow(x), nrow(x)/2)
+  test = (-train)
+  y.test=y[test]
+  
+  grid = 10^seq(8,-2, length = 100)
+  lasso.mod <- glmnet(x[train, ], y[train], alpha = 1, lambda = grid)
+  plot(lasso.mod) # Drawing plots of coefficients
+  
+  cv.out = cv.glmnet(x[train, ], y[train], alpha = 1) # Fit lasso model on training data
+  plot(cv.out) # Draw plot of training MSE as a function of lambda
+  bestlam = cv.out$lambda.min # Select lamda that minimizes training MSE
+  lasso.pred = predict(lasso.mod, s = bestlam, newx = x[test,]) # Use best lambda to predict test data
+  RMSE <- sqrt(mean((lasso.pred - y.test)^2))
+  RMSE_hist_d <- c(RMSE_hist_d, RMSE) 
+}
+cat("The test error with Lasso Regression was was:", round(mean(RMSE_hist_d),2), "with lambda =", bestlam,"\n")
 ```
-The test error with Lasso model was was:`RMSE` with lambda = `bestlam`
+The test error with Lasso model was was:`r round(mean(RMSE_hist_d),2)` with lambda = `r bestlam`
 
 ### 3.e
-
-### 3.f
-```{r PLS_model on College}
+```{r PCR_model on College, echo=FALSE}
 library(pls)
 library(ISLR)
 
 # checking for missing values
 sapply(College, function(x) sum(is.na(x)))
+# set.seed(1)
+x <- model.matrix(Apps~., data = College)[,-1]
+y <- College$Apps
+RMSE_hist_e <- NULL
+# set.seed(1)
 
-
+for(i in 1:5)
+{
+  set.seed(i)
+  train = sample(1:nrow(x), nrow(x)/2)
+  test = (-train)
+  y.test=y[test]
+  
+  pcr.fit = pcr(Apps~., data = College, subset = train, scale = TRUE, validation = "CV")
+  summary(pcr.fit)
+  validationplot(pcr.fit, val.type = "MSEP")
+  # From the summary, it is obvious that the loweest cross-validation error occurs at `17 commponents, and stays the same on further increase in the number of components.
+  pcr.pred = predict(pcr.fit, x[test,], ncomp = 17)
+  RMSE <- sqrt(mean( (pcr.pred - y[test])^2 ))
+  RMSE_hist_e <- c(RMSE_hist_e, RMSE)
+}
+cat("The test error with PCR Regression was was:", round(mean(RMSE_hist_e),2), "with m = 17\n")
 ```
+The test error using Principal Component regression was was:`r round(mean(RMSE_hist_e),2)` with number of components = 17
+
+
+### 3.f
+```{r PLS_model on College, echo=FALSE}
+library(pls)
+library(ISLR)
+
+# checking for missing values
+sapply(College, function(x) sum(is.na(x)))
+RMSE_hist_f <- NULL
+# set.seed(1)
+
+for(i in 1:5)
+{
+  set.seed(i)
+  x <- model.matrix(Apps~., data = College)[,-1]
+  y <- College$Apps
+  train = sample(1:nrow(x), nrow(x)/2)
+  test = (-train)
+  y.test=y[test]
+  
+  pls.fit = plsr(Apps~., data = College, subset = train, scale = TRUE, validation = "CV")
+  summary(pls.fit)
+  validationplot(pls.fit, val.type = "MSEP")
+  # From the summary, it is obvious that the loweest cross-validation error occurs at 8 commponents, and stays the same on further increase in the number of components.
+  pls.pred = predict(pls.fit, x[test,], ncomp = 8)
+  RMSE <- sqrt(mean( (pls.pred - y[test])^2 ))
+  RMSE_hist_f <- c(RMSE_hist_f, RMSE)
+}
+cat("The test error with PLS Regression was was:", round(mean(RMSE_hist_f),2), "with m = 17\n")
+```
+The test error using Partial Least squares was was:`r round(mean(RMSE_hist_f))` with number of components = 8
+
+### 3.g
+| Regression type           | Root Mean Square error |
+| ------------------------- |:----------------------:|
+| Ordinary Least Squares    | `r round(mean(RMSE_hist_b))`
+| Ridge regression          | `r round(mean(RMSE_hist_c))`
+| Lasso regression          | `r round(mean(RMSE_hist_d))`
+| PCR Model                 | `r round(mean(RMSE_hist_e))`
+| PLS Model                 | `r round(mean(RMSE_hist_f))`
+
+Since the average root mean square errors we have obtained in the models are between 1050 - 1350, our predictions are usually off by around a 1000 applications. The high RMSE can be explained because of some colleges taking in close to 48,000 applications (in which case an error rate of around a 1000 is reasonable), while some take in just 100.
