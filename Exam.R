@@ -35,16 +35,14 @@ sapply(2:length(Boston), function(x)
 # medv chas age dis
 
 # d
-head(Boston)
-
 sortedBy_crime_rates <- Boston[order(Boston$crim, decreasing = T),]
-sortedBy_crime_rates[1:10,]
+sortedBy_crime_rates[1:6,]
 
-sortedBy_crime_rates <- Boston[order(Boston$tax, decreasing = T),]
-sortedBy_crime_rates[1:10,]
+sortedBy_tax <- Boston[order(Boston$tax, decreasing = T),]
+sortedBy_tax[1:6,]
 
-sortedBy_crime_rates <- Boston[order(Boston$ptratio, decreasing = T),]
-sortedBy_crime_rates[1:10,]
+sortedBy_ptratio <- Boston[order(Boston$ptratio, decreasing = T),]
+sortedBy_ptratio[1:6,]
 
 # e
 table(Boston$chas)
@@ -85,8 +83,6 @@ dim(Boston[which(Boston$rm > 8), ])[1]
 # Question 15, Chapter 4
 
 library (MASS)
-length(names(Boston))
-2:length(names(Boston))
 
 # for (i in 2:length(names(Boston))) {
 #   paste("model_",i, sep = "") <- lm(Boston$crim ~ as.data.frame(Boston[i]))
@@ -102,7 +98,7 @@ lapply( Boston[,-1], function(x) {
 
 lapply( Boston[,-1], function(x) {
     model <- lm(Boston$crim ~ x)
-    plot(x, Boston$crim)
+    plot(x, Boston$crim, pch = 4, cex=0.7)
     abline(model$coef[1],model$coef[2],col=2,lwd=2)
   }
 )
@@ -122,7 +118,7 @@ lapply( Boston[,-1], function(x)
     abline(model$coef[1],model$coef[2],col=2,lwd=2)
   }
       )
-coefficients
+# coefficients
 multi_coefficients <- multilinear_model$coefficients[2:14]
 
 names <- NULL
@@ -130,8 +126,19 @@ lapply(seq_along(Boston[,-1]), function(x) {
   names <<- names(Boston)
   }
 )
-names
+# names
 
 names(coefficients) <- names[2:14]
+plot(coefficients, multi_coefficients, pch = 4, cex=0.7, col=2)
+
 
 # d
+lapply( Boston[,-1], function(x) 
+  {
+    x2 = x^2
+    x3 = x^3
+    summary(lm(Boston$crim ~ x + x2 + x3))
+  }
+      )
+
+

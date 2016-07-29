@@ -5,26 +5,267 @@ date: "July 27, 2016"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      warning=FALSE, message=FALSE)
 ```
 
-## R Markdown
+## Question 1 - Chapter 2  |  Problem 10
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+### 1.a
+```{r Boston_explore_1}
+library(MASS)
+# head(Boston)
+# ?Boston
+str(Boston)
+n <- dim(Boston)
+cat("Number of rows = ", n[1], "\nNumber of columns", n[2], "\n")
 ```
 
-## Including Plots
+There are 506 obs and 14 columns in the Boston dataset
 
-You can also embed plots, for example:
+This dataset contains information collected by the U.S CensusService concerning housing in the area of Boston, Massachusetts.
+The rows represent different suburbs in Boston whereas the columns represent various characteristics of that area:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+| Variable Name | Description                                |
+| ------------- |:------------------------------------------:|
+| crim          | per capita crime rate by town.
+| zn            | proportion of residential land zoned for lots over 25,000 sq.ft.
+| indus         | proportion of non-retail business acres per town.
+| chas          | Charles River dummy variable (= 1 if tract bounds river; 0 otherwise).
+| nox           | nitrogen oxides concentration (parts per 10 million).
+| rm            | average number of rooms per dwelling.
+| age           | proportion of owner-occupied units built prior to 1940.
+| dis           | weighted mean of distances to five Boston employment centres.
+| rad           | index of accessibility to radial highways.
+| tax           | full-value property-tax rate per \$10,000.
+| ptratio       | pupil-teacher ratio by town.
+| black         | 1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.
+| lstat         | lower status of the population (percent).
+| medv          | median value of owner-occupied homes in \$1000s.
+
+### 1.b
+```{r Boston_explore_2, echo=FALSE}
+pairs(Boston)
+pairs(Boston[c("lstat","medv","nox","dis","age","rm")])
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+* lstat and medv have a negative relationship
+* Houses with high medv have low crime rates (crim)
+* Nitrogen oxide concentration (nox) reduces as distance from employment centres (dis) increases, but non-linearly.
+* There is a linear relationship (few outliers) between medv and rm (no of rooms)
+
+### 1.c
+```{r, results="hide"}
+par(mfrow = c(2, 3))
+  
+sapply(2:length(Boston), function(x)
+  {
+    plot(Boston[,c(1,x)], pch = 4, cex=0.7)
+  }
+)
+```
+
+Yes, there are predictors that are associated with crime rate.
+* chas -> Most of the crimes occur away from the river. however this may be misleading as most of the recorded observations are away from the river
+* age -> areas with high number of old houses tend to have higher crime rates
+* dis -> crime rates are higher in areas which are closer to Boston's employment centres
+* medv -> areas with more higher priced homes have lower crime rates. Some high price areas have high crime rates
+
+### 1.d
+```{r}
+sortedBy_crime_rates <- Boston[order(Boston$crim, decreasing = T),]
+sortedBy_crime_rates[1:6,]
+
+sortedBy_tax <- Boston[order(Boston$tax, decreasing = T),]
+sortedBy_tax[1:6,]
+
+sortedBy_ptratio <- Boston[order(Boston$ptratio, decreasing = T),]
+sortedBy_ptratio[1:6,]
+
+summary(Boston)
+```
+
+381,419,406,411,415 are the suburbs with highest crime rates
+489,490,491,492,493 are the suburbs with highest tax rates
+355,356,128,129,130 are the suburbs with highest tax rates
+
+crim rates range between 0.006 and 88.969
+tax rates range between 187 and 711
+Teacher-pupil ratios range between 12.6 and 22
+
+### 1.e
+```{r}
+table(Boston$chas)
+```
+
+35 suburbs bound the Charles river
+
+### 1.f
+```{r}
+summary(Boston$ptratio)
+```
+
+Median value is 19.05
+
+### 1.g
+```{r}
+which.min(Boston$medv)
+Boston[which.min(Boston$medv),]
+
+```
+
+the 399th suburb of Boston the lowest value of house prices
+
+crim    zn indus  chas   nox    rm   age    dis  rad  tax
+38.3518  0  18.1    0   0.693  5.453 100  1.4896  24  666
+    ptratio black lstat  medv
+      20.2  396.9  30.59   5
+
+Crime rates - Crime rates are high and lie between the 3rd and 4th quartile
+zn - there is no land zoned for large lots which is in the lowest point in the range with the lowest value
+indus - indus value lies at the end of the 3rd quartile of the range
+chas - It does not lie along the Charles river like most other suburbs
+nox - it lies between the 3rd and 4th quartile of teh range
+rm - it lies in the first quartile in the range
+age - it is at the highest point of the range with the max value
+dis - it lies in the first quartile of the range
+rad - it is at the highest point of the range with the max value
+tax (full-value property-tax rate per /$10,000.) -  is on the higher side, and lies at the third quaritle (666)
+ptratio (pupil-teacher ratio) - is amongst the highest and lies at the third quartile of the dataset (20.20)
+black (1000(Bk - 0.63)^2 where Bk is the proportion of blacks by town.) - is the maximum value in the dataset (396.9)
+lstat - (lower status of the population in percent) is very high. Lies between 3rd quartile (16.95) and max (37.97)
+
+### 1.h
+```{r}
+dim(Boston[which(Boston$rm > 7), ])[1]
+dim(Boston[which(Boston$rm > 8), ])[1]
+
+```
+
+* The median of medv of these suburbs is much higher than the whole dataset
+* Majority of these houses are are in areas of high crime rates
+* These suburbs have lower percentage of people belonging to the lower status of the population
+* There is a lower proportion of African Americans in these suburbs
+* These suburbs have higher accessibility to radial highways than the overall dataset
+
+## Question 2 - Problem 15  |  Chapter 3
+
+### 2.a
+```{r, results="hide"}
+library (MASS)
+Boston$index = NULL
+        
+lapply( Boston[,-1], function(x) {
+  summary(lm(Boston$crim ~ x))
+  }
+)
+
+par(mfrow = c(2, 2))
+lapply( Boston[,-1], function(x) {
+    model <- lm(Boston$crim ~ x)
+    plot(x, Boston$crim)
+    abline(model$coef[1],model$coef[2],col=2,lwd=2)
+  }
+)
+```
+
+There is some statistical significance observed in models using the following variables:
+zn, indus, nox, rm, age, dis, rad, tax, ptratio, black, lstat, medv
+
+### 2.b
+```{r}
+multilinear_model <- lm(crim ~ .,data=Boston)
+summary(multilinear_model)
+
+```
+
+The variables that we can reject null hypothesis for are: (p<0.05)
+zn, dis, rad, black, medv
+
+### 2.c
+```{r, results="hide"}
+par(mfrow = c(2, 3))
+coefficients = NULL
+lapply( Boston[,-1], function(x) 
+  {
+    model <- lm(Boston$crim ~ x)
+    coefficients <<- c(coefficients,model$coefficients[2])
+    plot(x, Boston$crim)
+    abline(model$coef[1],model$coef[2],col=2,lwd=2)
+  }
+      )
+multi_coefficients <- multilinear_model$coefficients[2:14]
+
+names <- NULL
+lapply(seq_along(Boston[,-1]), function(x) 
+  {
+    names <<- names(Boston)
+  }
+      )
+names(coefficients) <- names[2:14]
+
+plot(coefficients, multi_coefficients, pch = 4, cex=0.7, col=2)
+```
+
+### 2.d
+```{r}
+lapply( Boston[,-1], function(x) 
+  {
+    x2 = x^2
+    x3 = x^3
+    summary(lm(Boston$crim ~ x + x2 + x3))
+  }
+)
+
+```
+
+The following variables have evidence of a nonlinear relationship:
+indus, nox, dis, ptratio, medv
+
+## Question 3 - Problem 9  |  Chapter 6
+
+### 3.a
+```{r Loading College}
+library(caTools)
+library(ISLR)
+set.seed(1000)
+split = sample.split(College$Apps, SplitRatio = 0.7)
+train = subset(College, split == TRUE)
+test = subset(College, split == FALSE)
+```
+
+Train and test datasets were split into 70% and 30%
+
+### 3.b
+```{r}
+model_collegeApp <- lm(Apps ~ ., data=train)
+summary(model_collegeApp)
+
+# Making predictions and calculating
+predictions_collegeApp <- predict(model_collegeApp, newdata = test)
+SSE <- sum((predictions_collegeApp - test$Apps)^2)
+SST <- sum((mean(train$Apps) - test$Apps)^2)
+RMSE <- sqrt(SSE/nrow(test))
+# cat("The test error obtained was: ", RMSE, "\n")
+```
+The test error obtained was `RMSE`
+
+### 3.c
+```{r}
+# checking for missing values
+sapply(College, function(x) sum(is.na(x)))
+# 
+x=model.matrix(Apps~.,train)[,-1]
+y=train$Apps
+
+library(glmnet)
+grid=10^seq(10,-2, length =100)
+ridge.mod=glmnet(x,y,alpha=0,lambda=grid)
+cv.out=cv.glmnet(x,y,alpha=0)
+plot(cv.out)
+bestlam =cv.out$lambda.min
+bestlam
+
+ridge.pred=predict(ridge.mod ,s=bestlam ,newx=x[test,])
+```
