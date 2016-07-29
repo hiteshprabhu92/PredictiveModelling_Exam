@@ -185,7 +185,7 @@ zn, dis, rad, black, medv
 
 ### 2.c
 ```{r, results="hide"}
-par(mfrow = c(2, 3))
+par(mfrow = c(2, 2))
 coefficients = NULL
 lapply( Boston[,-1], function(x) 
   {
@@ -238,8 +238,8 @@ test = subset(College, split == FALSE)
 Train and test datasets were split into 70% and 30%
 
 ### 3.b
-```{r}
-model_collegeApp <- lm(Apps ~ ., data=train)
+```{r linearModel on CollegeApps}
+model_collegeApp <- lm(Apps~., data = train)
 summary(model_collegeApp)
 
 # Making predictions and calculating
@@ -247,25 +247,74 @@ predictions_collegeApp <- predict(model_collegeApp, newdata = test)
 SSE <- sum((predictions_collegeApp - test$Apps)^2)
 SST <- sum((mean(train$Apps) - test$Apps)^2)
 RMSE <- sqrt(SSE/nrow(test))
-# cat("The test error obtained was: ", RMSE, "\n")
+cat("The test error obtained was: ", RMSE, "\n")
 ```
 The test error obtained was `RMSE`
 
 ### 3.c
-```{r}
+```{r RidgeModel on College}
+library(glmnet)
+library(ISLR)
+
 # checking for missing values
 sapply(College, function(x) sum(is.na(x)))
-# 
-x=model.matrix(Apps~.,train)[,-1]
-y=train$Apps
 
-library(glmnet)
-grid=10^seq(10,-2, length =100)
-ridge.mod=glmnet(x,y,alpha=0,lambda=grid)
-cv.out=cv.glmnet(x,y,alpha=0)
+x <- model.matrix(Apps~., data = College)[,-1]
+y <- College$Apps
+train = sample(1:nrow(x), nrow(x)/2)
+test = (-train)
+set.seed(1000)
+y.test=y[test]
+
+grid = 10^seq(10,-2, length = 100)
+ridge.mod = glmnet(x, y, alpha = 0, lambda = grid)
+cv.out = cv.glmnet(x[train, ], y[train], alpha = 0)
 plot(cv.out)
-bestlam =cv.out$lambda.min
+bestlam = cv.out$lambda.min
 bestlam
+ridge.pred = predict(ridge.mod, s = bestlam, newx = x[test,])
+RMSE <- sqrt(mean((ridge.pred-y.test)^2)) 
+cat("The test error with Ridge Regression was was:", RMSE, "with lambda =", bestlam,"\n")
+```
+The test error with Ridge Regression was was:`RMSE` with lambda = `bestlam`
 
-ridge.pred=predict(ridge.mod ,s=bestlam ,newx=x[test,])
+### 3.d
+```{r LassoModel on College}
+library(glmnet)
+library(ISLR)
+
+# checking for missing values
+sapply(College, function(x) sum(is.na(x)))
+
+x <- model.matrix(Apps~., data = College)[,-1]
+y <- College$Apps
+train = sample(1:nrow(x), nrow(x)/2)
+test = (-train)
+set.seed(1000)
+y.test=y[test]
+
+grid = 10^seq(8,-2, length = 100)
+lasso.mod <- glmnet(x[train, ], y[train], alpha = 1, lambda = grid)
+plot(lasso.mod) # Drawing plots of coefficients
+
+cv.out = cv.glmnet(x[train, ], y[train], alpha = 1) # Fit lasso model on training data
+plot(cv.out) # Draw plot of training MSE as a function of lambda
+bestlam = cv.out$lambda.min # Select lamda that minimizes training MSE
+lasso.pred = predict(lasso.mod, s = bestlam, newx = x[test,]) # Use best lambda to predict test data
+RMSE <- sqrt(mean((lasso.pred - y.test)^2)) 
+cat("The test error with Ridge Regression was was:", RMSE, "with lambda =", bestlam,"\n")
+```
+The test error with Lasso model was was:`RMSE` with lambda = `bestlam`
+
+### 3.e
+
+### 3.f
+```{r PLS_model on College}
+library(pls)
+library(ISLR)
+
+# checking for missing values
+sapply(College, function(x) sum(is.na(x)))
+
+
 ```
